@@ -1,0 +1,51 @@
+[package]
+edition = "2021"
+name    = "led-fader"
+version = "0.1.0"
+
+[features]
+default = [
+    "esp32c6",
+    "jtag",
+    "log",
+    "smartled"
+]
+
+log = [
+    "dep:log",
+    "esp-hal/log",
+    "esp-println/log",
+    "esp-backtrace/println",
+]
+
+defmt = [
+    "dep:defmt",
+    "esp-hal/defmt",
+    "esp-println/defmt-espflash",
+    "esp-backtrace/defmt",
+    "esp-hal-smartled?/defmt"
+]
+
+jtag = ["esp-println/jtag-serial"]
+uart = ["esp-println/uart"]
+
+esp32c6 = ["esp-hal/esp32c6", "esp-println/esp32c6", "esp-backtrace/esp32c6", "esp-hal-smartled?/esp32c6"]
+
+smartled = [
+    "esp-hal-smartled",
+    "smart-leds",
+]
+
+[dependencies]
+esp-hal = { version = "0.22.0" }
+esp-println = { version = "0.13.0", default-features = false, features = ["critical-section", "colors"] }
+esp-backtrace = { version = "0.15.0", features = ["panic-handler", "exception-handler"]  }
+
+defmt = { version = "0.3", optional = true }
+log = { version = "0.4", optional = true }
+
+# Time library for embedded targets with ease-of-use and performance first.
+fugit = "0.3"
+
+esp-hal-smartled = { version = "0.14", optional = true}
+smart-leds = { version = "0.4", optional = true}
