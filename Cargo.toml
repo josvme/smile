@@ -8,7 +8,8 @@ default = [
     "esp32c6",
     "jtag",
     "log",
-    "smartled"
+    "smartled",
+    "tft"
 ]
 
 log = [
@@ -36,7 +37,14 @@ smartled = [
     "smart-leds",
 ]
 
+tft = [
+   "mipidsi",
+    "embedded-hal-bus",
+    "embedded-graphics"
+]
+
 [dependencies]
+mipidsi = {version = "0.9.0", optional = true}
 esp-hal = { version = "0.22.0" }
 esp-println = { version = "0.13.0", default-features = false, features = ["critical-section", "colors"] }
 esp-backtrace = { version = "0.15.0", features = ["panic-handler", "exception-handler"]  }
@@ -49,3 +57,5 @@ fugit = "0.3"
 
 esp-hal-smartled = { version = "0.14", optional = true}
 smart-leds = { version = "0.4", optional = true}
+embedded-graphics = { version = "0.8.0", optional = true }
+embedded-hal-bus = {version = "0.3.0", optional = true }
