@@ -1,27 +1,29 @@
-//! Blinks an LED
-//!
-//! This assumes that a LED is connected to the pin assigned to `led`. (GPIO8)
-
 //% CHIPS: esp32c3 esp32c6
 
 #![no_std]
 #![no_main]
 
 use embedded_graphics::draw_target::DrawTarget;
-use embedded_graphics::pixelcolor::Rgb565;
+use embedded_graphics::mono_font::ascii::FONT_6X10;
+use embedded_graphics::mono_font::MonoTextStyleBuilder;
+use embedded_graphics::pixelcolor::{Rgb565};
 use embedded_graphics::prelude::{Point, Primitive, RgbColor};
 use embedded_graphics::primitives::{Circle, PrimitiveStyle, Triangle};
+use embedded_graphics::text::{Baseline, Text};
 use embedded_graphics::Drawable;
 use embedded_hal_bus::spi::ExclusiveDevice;
 use esp_hal::{clock::CpuClock, delay::Delay, entry, rmt::Rmt};
 
 use esp_backtrace as _;
-use esp_hal::gpio::{GpioPin, Io, Level, NoPin, Output};
+use esp_hal::gpio::{GpioPin, Level, Output};
 use esp_hal::rtc_cntl::Rtc;
 use esp_hal::spi::master::{Config, Spi};
 use esp_hal::spi::{SpiBitOrder, SpiMode};
 use esp_hal::timer::timg::TimerGroup;
 use esp_println::println;
+
+use esp_hal_smartled::{smartLedBuffer, SmartLedsAdapter};
+use smart_leds::{colors::*, SmartLedsWrite};
 
 use fugit::{ExtU64, RateExtU32};
 use mipidsi::interface::SpiInterface;
@@ -55,10 +57,6 @@ fn main() -> ! {
     }
 
     let rmt = Rmt::new(peripherals.RMT, 80.MHz()).unwrap();
-
-    use esp_hal_smartled::{smartLedBuffer, SmartLedsAdapter};
-    // see https://docs.rs/smart-leds/latest/smart_leds/
-    use smart_leds::{colors::*, SmartLedsWrite};
 
     let rmt_buffer = smartLedBuffer!(1);
     let mut led = SmartLedsAdapter::new(rmt.channel0, peripherals.GPIO8, rmt_buffer);
@@ -115,9 +113,6 @@ fn main() -> ! {
     // Make the display all black
     display.clear(Rgb565::BLACK).unwrap();
     // Draw a smiley face with white eyes and a red mouth
-
-    // Initialize the Delay peripheral, and use it to toggle the LED state in a
-    // loop.
     let mut i = 0;
     let mut style = PrimitiveStyle::with_fill(Rgb565::WHITE);
     loop {
@@ -133,8 +128,10 @@ fn main() -> ! {
                 style = PrimitiveStyle::with_fill(Rgb565::BLUE);
             } else if i == 2 {
                 style = PrimitiveStyle::with_fill(Rgb565::RED);
+            } else if i == 3 {
+                style = PrimitiveStyle::with_fill(Rgb565::WHITE);
             }
-            i = (i + 1) % 3;
+            i = (i + 1) % 4;
             draw_smiley(&mut display, style).unwrap();
         }
     }
@@ -144,6 +141,19 @@ fn draw_smiley<T: DrawTarget<Color = Rgb565>>(
     display: &mut T,
     style: PrimitiveStyle<Rgb565>,
 ) -> Result<(), T::Error> {
+    let text_style = MonoTextStyleBuilder::new()
+        .font(&FONT_6X10)
+        .text_color(style.fill_color.unwrap())
+        .build();
+
+    Text::with_baseline(
+        "Hello Kuttus!",
+        Point::new(100, 100),
+        text_style,
+        Baseline::Top,
+    )
+    .draw(display)?;
+
     // Draw the left eye as a circle located at (50, 100), with a diameter of 40, filled with white
     Circle::new(Point::new(50, 100), 40)
         .into_styled(style)
