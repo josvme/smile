@@ -21,7 +21,10 @@ esp-backtrace = { version = "0.18.1", features = [
   "panic-handler",
   "println",
 ] }
+
 esp-println = { version = "0.16.1", features = ["esp32c6", "log-04"] }
+esp-hal-smartled = { version = "0.17.0", optional = true }
+smart-leds = { version = "0.4", optional = true }
 
 
 [profile.dev]
@@ -37,3 +40,13 @@ incremental      = false
 lto              = 'fat'
 opt-level        = 's'
 overflow-checks  = false
+
+[features]
+default = [
+  "smartled",
+]
+
+smartled = [
+  "esp-hal-smartled",
+  "smart-leds",
+]
