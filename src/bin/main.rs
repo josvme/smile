@@ -7,8 +7,14 @@
 )]
 #![deny(clippy::large_stack_frames)]
 
+use embedded_graphics::Drawable;
+use embedded_graphics::geometry::Point;
+use embedded_graphics::mono_font::ascii::FONT_6X10;
+use embedded_graphics::mono_font::MonoTextStyleBuilder;
 use embedded_graphics::pixelcolor::Rgb565;
-use embedded_graphics::prelude::{DrawTarget, RgbColor};
+use embedded_graphics::prelude::{DrawTarget, Primitive, RgbColor};
+use embedded_graphics::primitives::{Circle, PrimitiveStyle, Triangle};
+use embedded_graphics::text::{Baseline, Text};
 use embedded_hal_bus::spi::ExclusiveDevice;
 use smart_leds::SmartLedsWrite;
 use esp_backtrace as _;
@@ -16,14 +22,14 @@ use esp_hal::clock::CpuClock;
 use esp_hal::delay::Delay;
 use esp_hal::main;
 use esp_hal::rmt::Rmt;
-use esp_hal::time::{Duration, Instant, Rate};
+use esp_hal::time::{Rate};
 use esp_hal::gpio::{Level, Output, OutputConfig};
 use esp_hal::spi::master::{Config, Spi};
 use esp_hal_smartled::{smart_led_buffer, SmartLedsAdapter};
 use mipidsi::Builder;
 use mipidsi::interface::SpiInterface;
 use mipidsi::models::ST7789;
-use smart_leds::colors::{GREEN, RED, WHITE, YELLOW};
+use smart_leds::colors::{GREEN, RED, BLUE, YELLOW};
 
 // This creates a default app-descriptor required by the esp-idf bootloader.
 // For more information see: <https://docs.espressif.com/projects/esp-idf/en/stable/esp32/api-reference/system/app_image_format.html#application-description>
@@ -86,23 +92,60 @@ fn main() -> ! {
         .init(&mut delay)
         .unwrap();
 
+    // Reset display
+    display.clear(Rgb565::BLACK).unwrap();
     let mut i = 0;
     loop {
-        for color in [WHITE, RED, YELLOW, GREEN] {
+        for color in [BLUE, RED, YELLOW, GREEN] {
             let data = [color; 1];
             led.write(data).unwrap();
 
             let style = match i {
-                0 => Rgb565::WHITE,
+                0 => Rgb565::BLUE,
                 1 => Rgb565::RED,
                 2 => Rgb565::YELLOW,
                 _ => Rgb565::GREEN
             };
 
             i = (i + 1) % 4;
-            display.clear(style).unwrap();
-            let delay_start = Instant::now();
-            while delay_start.elapsed() < Duration::from_millis(500) {}
+            draw_smiley(&mut display,  PrimitiveStyle::with_fill(style)).unwrap();
+            delay.delay_millis(1000u32);
         }
     }
+}
+
+fn draw_smiley<T: DrawTarget<Color = Rgb565>>(
+    display: &mut T,
+    style: PrimitiveStyle<Rgb565>,
+) -> Result<(), T::Error> {
+    let text_style = MonoTextStyleBuilder::new()
+        .font(&FONT_6X10)
+        .text_color(style.fill_color.unwrap())
+        .build();
+
+    Text::with_baseline(
+        "Hello World!",
+        Point::new(100, 100),
+        text_style,
+        Baseline::Top,
+    )
+        .draw(display)?;
+
+    Circle::new(Point::new(50, 100), 40)
+        .into_styled(style)
+        .draw(display)?;
+
+    Circle::new(Point::new(50, 200), 40)
+        .into_styled(style)
+        .draw(display)?;
+
+    Triangle::new(
+        Point::new(130, 140),
+        Point::new(130, 200),
+        Point::new(160, 170),
+    )
+        .into_styled(style)
+        .draw(display)?;
+
+    Ok(())
 }
